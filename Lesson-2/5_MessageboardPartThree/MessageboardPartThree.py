@@ -5,7 +5,7 @@
 # Instructions:
 #   1. In the do_POST method, send a 303 redirect back to the / page.
 #   2. In the do_GET method, put the response together and send it.
-
+import urllib
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 
@@ -41,6 +41,10 @@ class MessageHandler(BaseHTTPRequestHandler):
         memory.append(message)
 
         # 1. Send a 303 redirect back to the root page.
+        # First, send a 303 OK response.
+        self.send_response(303)
+        self.send_header('Location', '/')
+        self.end_headers()
 
     def do_GET(self):
         # First, send a 200 OK response.
@@ -51,8 +55,10 @@ class MessageHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         # 2. Put the response together out of the form and the stored messages.
+        message = form.format("\n".join(memory))
 
         # 3. Send the response.
+        self.wfile.write(message.encode())
 
 if __name__ == '__main__':
     server_address = ('', 8000)
