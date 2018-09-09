@@ -13,6 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from http import cookies
 from urllib.parse import parse_qs
 from html import escape as html_escape
+from http.cookies import SimpleCookie, CookieError
 
 form = '''<!DOCTYPE html>
 <title>I Remember You</title>
@@ -39,16 +40,19 @@ class NameHandler(BaseHTTPRequestHandler):
         yourname = parse_qs(data)["yourname"][0]
 
         # Create cookie.
-        c = cookies.SimpleCookie()
+        out_cookie = SimpleCookie()
 
         # 1. Set the fields of the cookie.
         #    Give the cookie a value from the 'yourname' variable,
         #    a domain (localhost), and a max-age.
-
+        out_cookie["yourname"] = yourname
+        out_cookie["yourname"]["max-age"] = 60
+        out_cookie["yourname"]["domain"] = 'localhost'
+        
         # Send a 303 back to the root page, with a cookie!
         self.send_response(303)  # redirect via GET
         self.send_header('Location', '/')
-        self.send_header('Set-Cookie', c['yourname'].OutputString())
+        self.send_header('Set-Cookie', out_cookie['yourname'].OutputString())
         self.end_headers()
 
     def do_GET(self):
@@ -61,7 +65,8 @@ class NameHandler(BaseHTTPRequestHandler):
                 # 2. Extract and decode the cookie.
                 #    Get the cookie from the headers and extract its value
                 #    into a variable called 'name'.
-
+                in_cookie = SimpleCookie(self.headers["Cookie"])
+                name = in_cookie["yourname"].value
                 # Craft a message, escaping any HTML special chars in name.
                 message = "Hey there, " + html_escape(name)
             except (KeyError, cookies.CookieError) as e:
